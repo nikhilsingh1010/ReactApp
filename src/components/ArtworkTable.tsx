@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { DataTable, DataTablePageParams } from "primereact/datatable";
+import { DataTable, DataTableStateEvent } from "primereact/datatable"; // Correct import
 import { Column } from "primereact/column";
-import { Checkbox } from "primereact/checkbox";
 import axios from "axios";
 import SelectionPanel from "./SelectionPanel";
-import "../App.css"; // Import the custom styles
+import "../App.css"; 
 
-interface Artwork {
+export interface Artwork {
   id: number;
   title: string;
   place_of_origin: string;
@@ -14,6 +13,13 @@ interface Artwork {
   inscriptions: string;
   date_start: number;
   date_end: number;
+}
+
+interface ApiResponse {
+  data: any[]; 
+  pagination: {
+    total: number;
+  };
 }
 
 const ArtworkTable: React.FC = () => {
@@ -25,7 +31,7 @@ const ArtworkTable: React.FC = () => {
   // Fetch data for the table
   const fetchData = async (pageNumber: number) => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<ApiResponse>(
         `https://api.artic.edu/api/v1/artworks?page=${pageNumber}`
       );
       const { data, pagination } = response.data;
@@ -52,8 +58,13 @@ const ArtworkTable: React.FC = () => {
   }, [page]);
 
   // Handle row selection
-  const onRowSelectChange = (e: DataTableSelectionChangeEvent) => {
+  const onRowSelectChange = (e: { value: Artwork[] }) => {
     setSelectedArtworks(e.value);
+  };
+
+  // Handle pagination change
+  const onPageChange = (e: DataTableStateEvent) => {
+    setPage((e.page || 0) + 1); // Adjusting to handle optional `page`
   };
 
   return (
@@ -67,9 +78,10 @@ const ArtworkTable: React.FC = () => {
         lazy
         selection={selectedArtworks}
         onSelectionChange={onRowSelectChange}
-        onPage={(e) => setPage(e.page + 1)}
+        onPage={onPageChange}
         dataKey="id"
         className="p-datatable-sm"
+        selectionMode="multiple" 
       >
         <Column selectionMode="multiple" headerStyle={{ width: "3em" }} />
         <Column field="title" header="Title" sortable />
